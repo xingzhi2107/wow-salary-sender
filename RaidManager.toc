@@ -1,0 +1,7 @@
+## Interface: 10000
+## Title: Raid Manager
+## Notes: Raid Manager
+## Author: Mistkafka
+## Version: 0.1
+embeds.xml
+Core.lua
