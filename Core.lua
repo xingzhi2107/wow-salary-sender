@@ -1,5 +1,6 @@
 RaidManager = LibStub('AceAddon-3.0'):NewAddon('RaidManager', 'AceConsole-3.0')
 local AceGUI = LibStub("AceGUI-3.0")
+local AceEvent = LibStub('AceEvent-3.0')
  addonName = ...
 
 PlayerClassEnum = {
@@ -49,8 +50,7 @@ RaidManager.slashOptions = {
             desc = 'trigger test function',
             type = 'execute',
             func = function() 
-                RaidManager:RefreshMembers()
-                RaidManager:DisplayMembers()
+                RaidManager:SendCurrSalaryMail()
             end
         }
     }
@@ -189,4 +189,207 @@ local function arrayShift(obj)
 end
 
 
+local sents = {
+    {
+        name = "忙着可爱",
+        sent = false,
+    },
+    {
+        name = "喝诶黑嘚讴豆",
+        sent = false,
+    },
+    {
+        name = "Deathcomes",
+        sent = false,
+    },
+    {
+        name = "宝宝骑神",
+        sent = false,
+    },
+    {
+        name = "冰飞",
+        sent = false,
+    },
+    {
+        name = "暗夜沧海",
+        sent = false,
+    },
+    {
+        name = "糖三勺",
+        sent = false,
+    },
+    {
+        name = "风火雷星",
+        sent = false,
+    },
+    {
+        name = "撸个串串",
+        sent = false,
+    },
+    {
+        name = "朝天子",
+        sent = false,
+    },
+    {
+        name = "只会递刀子",
+        sent = false,
+    },
+    {
+        name = "脆皮啼",
+        sent = false,
+    },
+    {
+        name = "希水",
+        sent = false,
+    },
+    {
+        name = "喊王山黄喊得",
+        sent = false,
+    },
+    {
+        name = "毛毛猪",
+        sent = false,
+    },
+    {
+        name = "流云舞雪",
+        sent = false,
+    },
+    {
+        name = "哆啦晓静",
+        sent = false,
+    },
+    {
+        name = "雪舞幽兰",
+        sent = false,
+    },
+    {
+        name = "燕子的夏天",
+        sent = false,
+    },
+    {
+        name = "抓不住",
+        sent = false,
+    },
+    {
+        name = "白垩圣骑",
+        sent = false,
+    },
+    {
+        name = "抗霸子",
+        sent = false,
+    },
+    {
+        name = "非洲的娘娘",
+        sent = false,
+    },
+    {
+        name = "幸运的兔脚",
+        sent = false,
+    },
+    {
+        name = "Tranzan",
+        sent = false,
+    },
+    {
+        name = "弄夜",
+        sent = false,
+    },
+    {
+        name = "单刷三中路",
+        sent = false,
+    },
+    {
+        name = "小凶器",
+        sent = false,
+    },
+    {
+        name = "星夜乱舞",
+        sent = false,
+    },
+    {
+        name = "波记",
+        sent = false,
+    },
+    {
+        name = "羊过小龍女",
+        sent = false,
+    },
+    {
+        name = "百威治百病",
+        sent = false,
+    },
+    {
+        name = "Ayanamirei",
+        sent = false,
+    },
+    {
+        name = "硬榔头",
+        sent = false,
+    },
+    {
+        name = "冰火佩佩",
+        sent = false,
+    },
+    {
+        name = "雨玲珑",
+        sent = false,
+    },
+    {
+        name = "佘大宝",
+        sent = false,
+    },
+    {
+        name = "飛騰",
+        sent = false,
+    },
 
+}
+
+local names = {
+}
+
+local currIndex = 1;
+
+
+function RaidManager:SendCurrSalaryMail()
+    if currIndex > #names then
+        RaidManager:Print('所有人的工资发送完毕');
+        return;
+    end
+    local m = names[currIndex];
+    local name = m.name;
+    if m.sent then
+        RaidManager:Print('给' .. name '的工资发送失败！已经发过了，不要重复发。');
+        return;
+    end
+    local subject = "[正式邮件]周五小克工资"
+    local body = "小克工资：15000 / 38 = 394。没收到工资请找 ‘非洲的娘娘’。"
+    -- local unit = 1; -- 1铜
+    local unit = 100 * 100; -- 1g
+    local salary = 394 * unit;
+    RaidManager:Print('准备给' .. name .. '发送工资');
+    SetSendMailMoney(salary)
+    SendMail(name, subject, body)
+end
+
+AceEvent:RegisterEvent("MAIL_SEND_SUCCESS", function(e) 
+    if currIndex > #names then
+        RaidManager:Print('所有人的工资发送完毕');
+        return;
+    end
+    local m = names[currIndex];
+    local name = m.name;
+    RaidManager:Print('给' .. name .. '的工资发送成功！');
+    m.sent = true;
+    currIndex = currIndex + 1;
+end)
+
+AceEvent:RegisterEvent("MAIL_FAILED", function(e) 
+    if currIndex > #names then
+        RaidManager:Print('所有人的工资发送完毕');
+        return;
+    end
+    local m = names[currIndex];
+    local name = m.name;
+    RaidManager:Print('给' .. name .. '的工资发送失败！可能超过每天发送的上限 或者 G不够。');
+end)
