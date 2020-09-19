@@ -45,9 +45,9 @@ RaidManager.slashOptions = {
             end
             
         },
-        test = {
-            name = 'test',
-            desc = 'trigger test function',
+        salary = {
+            name = 'salary',
+            desc = '工资邮寄管理',
             type = 'execute',
             func = function() 
                 RaidManager:SendCurrSalaryMail()
@@ -189,163 +189,36 @@ local function arrayShift(obj)
 end
 
 
-local sents = {
-    {
-        name = "忙着可爱",
-        sent = false,
-    },
-    {
-        name = "喝诶黑嘚讴豆",
-        sent = false,
-    },
-    {
-        name = "Deathcomes",
-        sent = false,
-    },
-    {
-        name = "宝宝骑神",
-        sent = false,
-    },
-    {
-        name = "冰飞",
-        sent = false,
-    },
-    {
-        name = "暗夜沧海",
-        sent = false,
-    },
-    {
-        name = "糖三勺",
-        sent = false,
-    },
-    {
-        name = "风火雷星",
-        sent = false,
-    },
-    {
-        name = "撸个串串",
-        sent = false,
-    },
-    {
-        name = "朝天子",
-        sent = false,
-    },
-    {
-        name = "只会递刀子",
-        sent = false,
-    },
-    {
-        name = "脆皮啼",
-        sent = false,
-    },
-    {
-        name = "希水",
-        sent = false,
-    },
-    {
-        name = "喊王山黄喊得",
-        sent = false,
-    },
-    {
-        name = "毛毛猪",
-        sent = false,
-    },
-    {
-        name = "流云舞雪",
-        sent = false,
-    },
-    {
-        name = "哆啦晓静",
-        sent = false,
-    },
-    {
-        name = "雪舞幽兰",
-        sent = false,
-    },
-    {
-        name = "燕子的夏天",
-        sent = false,
-    },
-    {
-        name = "抓不住",
-        sent = false,
-    },
-    {
-        name = "白垩圣骑",
-        sent = false,
-    },
-    {
-        name = "抗霸子",
-        sent = false,
-    },
-    {
-        name = "非洲的娘娘",
-        sent = false,
-    },
-    {
-        name = "幸运的兔脚",
-        sent = false,
-    },
-    {
-        name = "Tranzan",
-        sent = false,
-    },
-    {
-        name = "弄夜",
-        sent = false,
-    },
-    {
-        name = "单刷三中路",
-        sent = false,
-    },
-    {
-        name = "小凶器",
-        sent = false,
-    },
-    {
-        name = "星夜乱舞",
-        sent = false,
-    },
-    {
-        name = "波记",
-        sent = false,
-    },
-    {
-        name = "羊过小龍女",
-        sent = false,
-    },
-    {
-        name = "百威治百病",
-        sent = false,
-    },
-    {
-        name = "Ayanamirei",
-        sent = false,
-    },
-    {
-        name = "硬榔头",
-        sent = false,
-    },
-    {
-        name = "冰火佩佩",
-        sent = false,
-    },
-    {
-        name = "雨玲珑",
-        sent = false,
-    },
-    {
-        name = "佘大宝",
-        sent = false,
-    },
-    {
-        name = "飛騰",
-        sent = false,
-    },
-
-}
+local sents = {}
 
 local names = {
+{
+    name = "非洲的娘娘",
+},
+{
+    name = "白垩圣骑",
+},
+{
+    name = "哆啦晓静",
+},
+{
+    name = "暗夜沧海",
+},
+{
+    name = "桃色周刊",
+},
+{
+    name = "宝宝骑神",
+},
+{
+    name = "雪舞幽兰",
+},
+{
+    name = "忙着可爱",
+},
+{
+    name = "飛騰",
+},
 }
 
 local currIndex = 1;
@@ -362,11 +235,11 @@ function RaidManager:SendCurrSalaryMail()
         RaidManager:Print('给' .. name '的工资发送失败！已经发过了，不要重复发。');
         return;
     end
-    local subject = "[正式邮件]周五小克工资"
-    local body = "小克工资：15000 / 38 = 394。没收到工资请找 ‘非洲的娘娘’。"
+    local subject = "[正式邮件] 夙愿TAQ周五双子～小克 治疗补贴"
+    local body = "治疗补贴：100。没收到工资请找 ‘非洲的娘娘’。"
     -- local unit = 1; -- 1铜
     local unit = 100 * 100; -- 1g
-    local salary = 394 * unit;
+    local salary = 100 * unit;
     RaidManager:Print('准备给' .. name .. '发送工资');
     SetSendMailMoney(salary)
     SendMail(name, subject, body)
@@ -393,3 +266,74 @@ AceEvent:RegisterEvent("MAIL_FAILED", function(e)
     local name = m.name;
     RaidManager:Print('给' .. name .. '的工资发送失败！可能超过每天发送的上限 或者 G不够。');
 end)
+
+
+function RaidManager:ShowSalaryManager()
+  local taskTitle = nil
+  local frame = AceGUI:Create("Frame")
+  frame:SetTitle('团队工资邮寄管理')
+  frame:SetCallback('OnClose', function (widget) AceGUI:Release(widget) end)
+  frame:SetLayout('Flow')
+    
+  local subjectField = renderEditField({
+    label = '邮件标题',
+  })
+  local bodyField = renderTextareField({
+    label = '邮件内容',
+    width = 400,
+  })
+  frame:AddChild(subjectField)
+  frame:AddChild(bodyField)
+  local status = '创建中'
+  frame:SetStatusText(status)
+end
+
+
+local function renderEditField(meta)
+  local val = meta.iniVal
+  local editbox = AceGUI:Create('EditBox')
+  local width = meta.width or 200
+  editbox:SetLabel(meta.label)
+  editbox:SetWidth(width)
+  editbox:SetText(val)
+  if meta.height then
+    editbox:SetHeight(meta.height)
+  end
+  editbox:SetCallback('OnEnterPressed', function(widget, event, text) val = text end)
+
+  return editbox
+end
+
+
+local function renderTextareField(meta)
+  local val = meta.iniVal
+  local editbox = AceGUI:Create('MultiLineEditBox')
+  local width = meta.width or 200
+  editbox:SetLabel(meta.label)
+  editbox:SetWidth(width)
+  editbox:SetText(val)
+  if meta.height then
+    editbox:SetHeight(meta.height)
+  end
+  if meta.numLines then
+    editbox:SetNumLines(meta.numLines)
+  end
+  editbox:SetCallback('OnEnterPressed', function(widget, event, text) val = text end)
+
+  return editbox
+end
+
+local function applyCommonProps(meta, dom)
+  local commonProps = {
+    'width',
+    'relativeWidth',
+    'height',
+    'point',
+    'userData',
+    'fullHeight',
+    'fullWidth',
+  }
+  for i = 1, #commonProps do
+    local prop = commonProps[i]
+  end
+end
