@@ -270,22 +270,34 @@ function RaidManager:ShowSalaryManager()
     scrollContainer:AddChild(scroll)
 
     -- email content
+    local emailContainer = AceGUI:Create("InlineGroup")
+    emailContainer:SetLayout('List')
+    emailContainer:SetTitle('邮件')
+    emailContainer:SetFullWidth(true)
+    emailContainer:SetHeight(20*SCALE_LENGTH)
+    emailContainer.noAutoHeight = true
     local subjectField = RaidManager:renderEditField({
-        label = '邮件标题',
+        label = '标题',
         width = 400,
     })
     local bodyField = RaidManager:renderTextareField({
-        label = '邮件内容',
+        label = '内容',
         width = 400,
         numLines = 5,
     })
-    scroll:AddChild(subjectField)
-    scroll:AddChild(bodyField)
+    emailContainer:AddChild(subjectField)
+    emailContainer:AddChild(bodyField)
+    scroll:AddChild(emailContainer)
+
+    scroll:AddChild(RaidManager:renderSubsidy())
 
     -- members content
     local membersGroup = RaidManager:renderMembers()
-    membersGroup:SetLayout('Flow')
-    scroll:AddChild(membersGroup)
+    local membersContainer = AceGUI:Create("InlineGroup")
+    membersContainer:SetTitle('最终工资')
+    membersContainer:SetFullWidth(true)
+    membersContainer:AddChild(membersGroup)
+    scroll:AddChild(membersContainer)
 end
 
 
@@ -368,19 +380,76 @@ function RaidManager:renderTextareField(meta)
 end
 
 
+function RaidManager:renderSubsidy()
+    local subSidyContainer = AceGUI:Create("InlineGroup")
+    subSidyContainer:SetTitle('补贴')
+    subSidyContainer:SetFullWidth(true)
+    subSidyContainer:SetLayout('Flow')
+
+    subSidyContainer:AddChild(RaidManager:renderTankSubsidy())
+    subSidyContainer:AddChild(RaidManager:renderHealerSubsidy())
+    subSidyContainer:AddChild(RaidManager:renderDPSSubsidy())
+
+    return subSidyContainer
+end
+
+function RaidManager:renderTankSubsidy()
+    local tankContainer = AceGUI:Create('InlineGroup')
+    tankContainer:SetTitle('坦克')
+    tankContainer:SetWidth(20 * SCALE_LENGTH)
+    tankContainer:SetLayout('List')
+
+    for i=1, 4 do
+        tankContainer:AddChild(RaidManager:renderSubsidyItem({}))
+    end
+
+    return tankContainer
+end
 
 
+function RaidManager:renderHealerSubsidy()
+    local container = AceGUI:Create('InlineGroup')
+    container:SetTitle('治疗')
+    container:SetWidth(20 * SCALE_LENGTH)
+    container:SetLayout('List')
+
+    for i=1, 10 do
+        container:AddChild(RaidManager:renderSubsidyItem({}))
+    end
+
+    return container
+end
+
+function RaidManager:renderDPSSubsidy()
+    local container = AceGUI:Create('InlineGroup')
+    container:SetTitle('DPS')
+    container:SetWidth(20 * SCALE_LENGTH)
+    container:SetLayout('List')
+
+    for i=1, 5 do
+        container:AddChild(RaidManager:renderSubsidyItem({}))
+    end
+
+    return container
+end
 
 
+function RaidManager:renderSubsidyItem(info)
+    local group = AceGUI:Create('SimpleGroup')
+    group:SetLayout('Flow')
 
+    local select = AceGUI:Create('Dropdown')
+    select:SetList({[1]="张三",[2]="李四"})
+    select:SetValue(1)
+    select:SetWidth(9 * SCALE_LENGTH)
 
+    local subsidy = RaidManager:renderEditField({
+        iniVal = 0,
+        width = 8 * SCALE_LENGTH
+    })
 
+    group:AddChild(select)
+    group:AddChild(subsidy)
 
-
-
-
-
-
-
-
-
+    return group
+end
