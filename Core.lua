@@ -1,7 +1,9 @@
 RaidManager = LibStub('AceAddon-3.0'):NewAddon('RaidManager', 'AceConsole-3.0')
 local AceGUI = LibStub("AceGUI-3.0")
 local AceEvent = LibStub('AceEvent-3.0')
- addonName = ...
+addonName = ...
+
+local SCALE_LENGTH = 10
 
 PlayerClassEnum = {
     WARRIOR = 'WARRIOR',  --战士
@@ -43,14 +45,15 @@ RaidManager.slashOptions = {
             func = function ()
                 RaidManager:createTask()
             end
-            
+
         },
         salary = {
             name = 'salary',
             desc = '工资邮寄管理',
             type = 'execute',
-            func = function() 
-                RaidManager:SendCurrSalaryMail()
+            func = function()
+                RaidManager:RefreshMembers()
+                RaidManager:ShowSalaryManager()
             end
         }
     }
@@ -77,13 +80,13 @@ function RaidManager:createTask ()
     frame:SetStatusText('启用中')
     frame:SetCallback('OnClose', function (widget) AceGUI:Release(widget) end)
     frame:SetLayout('Flow')
-    
+
     local editbox = AceGUI:Create('EditBox')
     editbox:SetLabel("任务名称")
     editbox:SetWidth(200)
     editbox:SetCallback('OnEnterPressed', function(widget, event, text) taskTitle = text end)
     frame:AddChild(editbox)
-    
+
     local button = AceGUI:Create("Button")
     button:SetText('保存')
     button:SetWidth(80)
@@ -132,15 +135,23 @@ function MemberInfo:new(name, subgroup, level, classCode, zone, online, isDead, 
 end
 
 function RaidManager:RefreshMembers()
-    members = {}
+    local members = {}
+    local partyToMembers = {}
     for i = 1, 40 do
         local name, rank, subgroup, level, class, classCode, zone, online, isDead, role, isML = GetRaidRosterInfo(i);
         if name then
             local memberInfo = MemberInfo:new(name, subgroup, level, classCode, zone, online, isDead, role, isML)
             members[#members+1] = memberInfo
+            if not partyToMembers[subgroup] then
+                partyToMembers[subgroup] = {}
+            end
+            local subgroupMembers = partyToMembers[subgroup]
+            subgroupMembers[#subgroupMembers+1] = memberInfo
         end
     end
     self.members = members
+    self.partyToMembers = partyToMembers
+    globalPTM = partyToMembers
 end
 
 function RaidManager:DisplayMembers()
@@ -192,33 +203,6 @@ end
 local sents = {}
 
 local names = {
-{
-    name = "非洲的娘娘",
-},
-{
-    name = "白垩圣骑",
-},
-{
-    name = "哆啦晓静",
-},
-{
-    name = "暗夜沧海",
-},
-{
-    name = "桃色周刊",
-},
-{
-    name = "宝宝骑神",
-},
-{
-    name = "雪舞幽兰",
-},
-{
-    name = "忙着可爱",
-},
-{
-    name = "飛騰",
-},
 }
 
 local currIndex = 1;
@@ -235,7 +219,7 @@ function RaidManager:SendCurrSalaryMail()
         RaidManager:Print('给' .. name '的工资发送失败！已经发过了，不要重复发。');
         return;
     end
-    local subject = "[正式邮件] 夙愿TAQ周五双子～小克 治疗补贴"
+    local subject = "TAQ治疗补贴"
     local body = "治疗补贴：100。没收到工资请找 ‘非洲的娘娘’。"
     -- local unit = 1; -- 1铜
     local unit = 100 * 100; -- 1g
@@ -245,7 +229,7 @@ function RaidManager:SendCurrSalaryMail()
     SendMail(name, subject, body)
 end
 
-AceEvent:RegisterEvent("MAIL_SEND_SUCCESS", function(e) 
+AceEvent:RegisterEvent("MAIL_SEND_SUCCESS", function(e)
     if currIndex > #names then
         RaidManager:Print('所有人的工资发送完毕');
         return;
@@ -257,7 +241,7 @@ AceEvent:RegisterEvent("MAIL_SEND_SUCCESS", function(e)
     currIndex = currIndex + 1;
 end)
 
-AceEvent:RegisterEvent("MAIL_FAILED", function(e) 
+AceEvent:RegisterEvent("MAIL_FAILED", function(e)
     if currIndex > #names then
         RaidManager:Print('所有人的工资发送完毕');
         return;
@@ -269,71 +253,134 @@ end)
 
 
 function RaidManager:ShowSalaryManager()
-  local taskTitle = nil
-  local frame = AceGUI:Create("Frame")
-  frame:SetTitle('团队工资邮寄管理')
-  frame:SetCallback('OnClose', function (widget) AceGUI:Release(widget) end)
-  frame:SetLayout('Flow')
-    
-  local subjectField = renderEditField({
-    label = '邮件标题',
-  })
-  local bodyField = renderTextareField({
-    label = '邮件内容',
-    width = 400,
-  })
-  frame:AddChild(subjectField)
-  frame:AddChild(bodyField)
-  local status = '创建中'
-  frame:SetStatusText(status)
+    local taskTitle = nil
+    local frame = AceGUI:Create("Frame")
+    frame:SetTitle('团队工资邮寄管理')
+    frame:SetCallback('OnClose', function (widget) AceGUI:Release(widget) end)
+    frame:SetLayout('Flow')
+    local status = '创建中'
+    frame:SetStatusText(status)
+    local scrollContainer = AceGUI:Create('SimpleGroup')
+    scrollContainer:SetFullWidth(true)
+    scrollContainer:SetFullHeight(true)
+    scrollContainer:SetLayout('Fill')
+    frame:AddChild(scrollContainer)
+    local scroll = AceGUI:Create('ScrollFrame')
+    scroll:SetLayout('List')
+    scrollContainer:AddChild(scroll)
+
+    -- email content
+    local subjectField = RaidManager:renderEditField({
+        label = '邮件标题',
+        width = 400,
+    })
+    local bodyField = RaidManager:renderTextareField({
+        label = '邮件内容',
+        width = 400,
+        numLines = 5,
+    })
+    scroll:AddChild(subjectField)
+    scroll:AddChild(bodyField)
+
+    -- members content
+    local membersGroup = RaidManager:renderMembers()
+    membersGroup:SetLayout('Flow')
+    scroll:AddChild(membersGroup)
 end
 
 
-local function renderEditField(meta)
-  local val = meta.iniVal
-  local editbox = AceGUI:Create('EditBox')
-  local width = meta.width or 200
-  editbox:SetLabel(meta.label)
-  editbox:SetWidth(width)
-  editbox:SetText(val)
-  if meta.height then
-    editbox:SetHeight(meta.height)
-  end
-  editbox:SetCallback('OnEnterPressed', function(widget, event, text) val = text end)
+function RaidManager:renderMembers()
+    local membersContainer = AceGUI:Create('SimpleGroup')
+    membersContainer:SetLayout('Flow')
+    membersContainer:SetWidth(15 * 4.5 * SCALE_LENGTH)
+    membersContainer:SetHeight(15 * 5.5 * SCALE_LENGTH)
 
-  return editbox
+    for i=1, 8 do
+        local partyEl = RaidManager:rednerParty(i)
+        membersContainer:AddChild(partyEl)
+    end
+
+    return membersContainer
 end
 
 
-local function renderTextareField(meta)
-  local val = meta.iniVal
-  local editbox = AceGUI:Create('MultiLineEditBox')
-  local width = meta.width or 200
-  editbox:SetLabel(meta.label)
-  editbox:SetWidth(width)
-  editbox:SetText(val)
-  if meta.height then
-    editbox:SetHeight(meta.height)
-  end
-  if meta.numLines then
-    editbox:SetNumLines(meta.numLines)
-  end
-  editbox:SetCallback('OnEnterPressed', function(widget, event, text) val = text end)
+function RaidManager:rednerParty(partyNO)
+    local members = self.partyToMembers[partyNO]
+    members = members or {}
+    local party = AceGUI:Create("InlineGroup")
+    party:SetLayout("List")
+    party:SetTitle(partyNO .. '队')
+    party:SetWidth(15*SCALE_LENGTH)
+    party:SetHeight(27*SCALE_LENGTH)
+    party.noAutoHeight = true
 
-  return editbox
+    for i=1, #members do
+        local member = members[i]
+        memberEl = RaidManager:renderEditField({
+            label = member.name,
+            iniVal = 0,
+            width = 12 * SCALE_LENGTH,
+        })
+        party:AddChild(memberEl)
+    end
+
+    return party
 end
 
-local function applyCommonProps(meta, dom)
-  local commonProps = {
-    'width',
-    'relativeWidth',
-    'height',
-    'point',
-    'userData',
-    'fullHeight',
-    'fullWidth',
-  }
-  for i = 1, #commonProps do
-    local prop = commonProps[i]
-  end
+
+function RaidManager:rednerSimpleGroup()
+    local simpleGroup = AceGUI:Create('SimpleGroup')
+    return simpleGroup
 end
+
+function RaidManager:renderEditField(meta)
+    local val = meta.iniVal
+    local editbox = AceGUI:Create('EditBox')
+    local width = meta.width or 200
+    editbox:SetLabel(meta.label)
+    editbox:SetWidth(width)
+    editbox:SetText(val)
+    if meta.height then
+        editbox:SetHeight(meta.height)
+    end
+    editbox:SetCallback('OnEnterPressed', function(widget, event, text) val = text end)
+
+    return editbox
+end
+
+
+function RaidManager:renderTextareField(meta)
+    local val = meta.iniVal or ''
+    local editbox = AceGUI:Create('MultiLineEditBox')
+    local width = meta.width or 200
+    editbox:SetLabel(meta.label)
+    editbox:SetWidth(width)
+    editbox:SetText(val)
+    if meta.height then
+        editbox:SetHeight(meta.height)
+    end
+    if meta.numLines then
+        editbox:SetNumLines(meta.numLines)
+    end
+    editbox:SetCallback('OnEnterPressed', function(widget, event, text) val = text end)
+
+    return editbox
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
