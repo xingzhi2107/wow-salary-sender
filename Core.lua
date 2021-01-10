@@ -55,7 +55,23 @@ RaidManager.slashOptions = {
                 RaidManager:RefreshMembers()
                 RaidManager:ShowSalaryManager()
             end
-        }
+        },
+        sendsalary = {
+            name = 'sendsalary',
+            desc = '工资邮寄',
+            type = 'execute',
+            func = function()
+                RaidManager:SendCurrSalaryMail()
+            end
+        },
+       test = {
+          name = 'test',
+          desc = 'test',
+          type = 'execute',
+          func = function()
+             RaidManager:DisplayTotalSalary()
+          end
+       }
     }
 }
 
@@ -134,6 +150,7 @@ function MemberInfo:new(name, subgroup, level, classCode, zone, online, isDead, 
     return o
 end
 
+
 function RaidManager:RefreshMembers()
     local members = {}
     local partyToMembers = {}
@@ -200,33 +217,81 @@ local function arrayShift(obj)
 end
 
 
-local sents = {}
+local sents = {
+}
 
 local names = {
 }
 
 local currIndex = 1;
 
-
 function RaidManager:SendCurrSalaryMail()
     if currIndex > #names then
         RaidManager:Print('所有人的工资发送完毕');
         return;
     end
-    local m = names[currIndex];
-    local name = m.name;
-    if m.sent then
-        RaidManager:Print('给' .. name '的工资发送失败！已经发过了，不要重复发。');
-        return;
+    local player = names[currIndex];
+    local salaries = player.salaries
+    local player_salary = 0
+    local note = '[' .. player.name ..']工资明细: '
+    for j = 1, #salaries do
+        salary_item = salaries[j]
+        note = note .. salary_item.note .. ': ' .. salary_item.value .. ', '
+        player_salary = player_salary + salary_item.value
     end
-    local subject = "TAQ治疗补贴"
-    local body = "治疗补贴：100。没收到工资请找 ‘非洲的娘娘’。"
-    -- local unit = 1; -- 1铜
+    note = note .. '  共计:  ' .. player_salary
+    local subject = "1月8日，蜘蛛之吻NAXX"
+    local body = "基本工资：(56000 - 7200 包含明晚开荒4dk的8个泰坦) / 40 = 1220" .. note
     local unit = 100 * 100; -- 1g
-    local salary = 100 * unit;
-    RaidManager:Print('准备给' .. name .. '发送工资');
+    local salary = player_salary * unit;
+    RaidManager:Print('准备给' .. player.name .. '发送工资. ' .. note);
     SetSendMailMoney(salary)
-    SendMail(name, subject, body)
+    SendMail(player.name, subject, body)
+end
+
+function RaidManager:DisplayTotalSalary()
+    local totalSalary = 0
+    for i=1, #names do
+        local player = names[i];
+        local salaries = player.salaries
+        local player_salary = 0
+        local note = '[' .. player.name ..']工资明细: '
+        for j = 1, #salaries do
+            local salary_item = salaries[j]
+            note = note .. salary_item.note .. ': ' .. salary_item.value .. ', '
+            player_salary = player_salary + salary_item.value
+        end
+        note = note .. '  共计:  ' .. player_salary
+        RaidManager:Print(note)
+        totalSalary = player_salary + totalSalary
+    end
+
+    local salaryGroupByNote = {}
+    for i=1, #names do
+        local player = names[i];
+        local salaries = player.salaries
+        for j = 1, #salaries do
+            local salary_item = salaries[j]
+            local note = salary_item.note
+            if not salaryGroupByNote[note] then
+                salaryGroupByNote[note] = {}
+            end
+            local salaries_in_note = salaryGroupByNote[note]
+            salaries_in_note[#salaries_in_note+1] = salary_item
+        end
+    end
+
+    for note, salary_items in pairs(salaryGroupByNote) do
+        local noteTotal = 0
+        for i=1, #salary_items do
+            local salary_item = salary_items[i]
+            noteTotal = noteTotal + salary_item.value
+        end
+        RaidManager:Print(note .. '人数： ' .. #salary_items .. ': ' .. noteTotal)
+    end
+
+    RaidManager:Print('人数：' .. #names)
+    RaidManager:Print('全部工资总计：' .. totalSalary)
 end
 
 AceEvent:RegisterEvent("MAIL_SEND_SUCCESS", function(e)
@@ -234,10 +299,9 @@ AceEvent:RegisterEvent("MAIL_SEND_SUCCESS", function(e)
         RaidManager:Print('所有人的工资发送完毕');
         return;
     end
-    local m = names[currIndex];
-    local name = m.name;
+    local player = names[currIndex];
+    local name = player.name;
     RaidManager:Print('给' .. name .. '的工资发送成功！');
-    m.sent = true;
     currIndex = currIndex + 1;
 end)
 
