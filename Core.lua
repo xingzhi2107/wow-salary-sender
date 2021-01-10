@@ -127,7 +127,7 @@ function RaidManager:AutoGroup()
     -- 自动分组
     -- 设置多种分组方案：1. 初始分组，4个MT在1、2组，优先QS、XD看T的血， 每组尽量一个ss，如果没有就小D，如果没有就空着， 近战组zs、lr + 其它物理攻击 + 一个ms/xd/qs；
     --                 2. bwl老一分组，分4个组
-    --                 3. 分G的时候，根据T、治疗、DPS分组 
+    --                 3. 分G的时候，根据T、治疗、DPS分组
 end
 
 
