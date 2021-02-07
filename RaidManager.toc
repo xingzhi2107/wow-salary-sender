@@ -3,5 +3,6 @@
 ## Notes: Raid Manager
 ## Author: Mistkafka
 ## Version: 0.1
+## SavedVariables: RaidManagerDB
 embeds.xml
 Core.lua
