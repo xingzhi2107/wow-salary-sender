@@ -5,25 +5,6 @@ addonName = ...
 
 local SCALE_LENGTH = 10
 
-PlayerClassEnum = {
-    WARRIOR = 'WARRIOR',  --战士
-    ROGUE   = 'ROGUE',    --盗贼
-    MAGE    = 'MAGE',     --法师
-    PRIEST  = 'PRIEST',   --牧师
-    WARLOCK = 'WARLOCK',  --术士
-    HUNTER  = 'HUNTER',   --猎人
-    SHAMAN  = 'SHAMAN',   --萨满
-    DRUID   = 'DRUID',    --德鲁伊
-    PALADIN = 'PALADIN'   --圣骑士
-}
-
-RaidRoles = {
-    MAINTANK = 'MAINTANK',  -- 坦克
-    HEALER   = 'HEALER',    -- 治疗
-    DPS      = 'DPS',       -- DPS
-}
-
-
 RaidManager.DEFAULT_CONFIG = {}
 
 RaidManager.slashOptions = {
@@ -36,15 +17,6 @@ RaidManager.slashOptions = {
             type = 'execute',
             func = function ()
                 RaidManager:Print(addonName .. '启用中')
-            end
-        },
-        salary = {
-            name = 'salary',
-            desc = '工资邮寄管理',
-            type = 'execute',
-            func = function()
-                RaidManager:RefreshMembers()
-                RaidManager:ShowSalaryManager()
             end
         },
         sendsalary = {
@@ -109,35 +81,6 @@ function MemberInfo:new(name, subgroup, level, classCode, zone, online, isDead, 
 end
 
 
-function RaidManager:RefreshMembers()
-    local members = {}
-    local partyToMembers = {}
-    for i = 1, 40 do
-        local name, rank, subgroup, level, class, classCode, zone, online, isDead, role, isML = GetRaidRosterInfo(i);
-        if name then
-            local memberInfo = MemberInfo:new(name, subgroup, level, classCode, zone, online, isDead, role, isML)
-            members[#members+1] = memberInfo
-            if not partyToMembers[subgroup] then
-                partyToMembers[subgroup] = {}
-            end
-            local subgroupMembers = partyToMembers[subgroup]
-            subgroupMembers[#subgroupMembers+1] = memberInfo
-        end
-    end
-    self.members = members
-    self.partyToMembers = partyToMembers
-    globalPTM = partyToMembers
-end
-
-function RaidManager:DisplayMembers()
-    local members = RaidManager.members
-    for i=1, #members do
-        local member = members[i]
-        RaidManager:Print(member.name)
-    end
-end
-
-
 -- utils
 local function setDefault(obj, key, defaultVal)
     if obj[key] then
@@ -159,6 +102,60 @@ local sents = {
 }
 
 local names = {
+    {
+        name = '蓝沙小术',
+        salaries = {
+            {
+                note = '基本工资(4/4)',
+                value = 712,
+            },
+        },
+    },
+    {
+        name = '撸个串串',
+        salaries = {
+            {
+                note = '基本工资(4/4)',
+                value = 712,
+            },
+        },
+    },
+    {
+        name = '暗夜猎奇',
+        salaries = {
+            {
+                note = '基本工资(4/4)',
+                value = 712,
+            },
+        },
+    },
+    {
+        name = '竹香子',
+        salaries = {
+            {
+                note = '基本工资(4/4)',
+                value = 712,
+            },
+        },
+    },
+    {
+        name = '心往神驰',
+        salaries = {
+            {
+                note = '基本工资(4/4)',
+                value = 712,
+            },
+        },
+    },
+    {
+        name = '都没有我高',
+        salaries = {
+            {
+                note = '基本工资(4/4)',
+                value = 712,
+            },
+        },
+    },
 }
 
 local currIndex = 1;
@@ -178,9 +175,10 @@ function RaidManager:SendCurrSalaryMail()
         player_salary = player_salary + salary_item.value
     end
     note = note .. '  共计:  ' .. player_salary
-    local subject = "1月8日，蜘蛛之吻NAXX"
-    local body = "基本工资：(56000 - 7200 包含明晚开荒4dk的8个泰坦) / 40 = 1220" .. note
+    local subject = "11月21日，毒蛇神殿[测试]"
+    local body = "基本工资：(17800) / 25 = 712. 插件测试邮件，只有7银12铜。" .. note
     local unit = 100 * 100; -- 1g
+    unit = 1;
     local salary = player_salary * unit;
     RaidManager:Print('准备给' .. player.name .. '发送工资. ' .. note);
     SetSendMailMoney(salary)
@@ -252,223 +250,3 @@ AceEvent:RegisterEvent("MAIL_FAILED", function(e)
     local name = m.name;
     RaidManager:Print('给' .. name .. '的工资发送失败！可能超过每天发送的上限 或者 G不够。');
 end)
-
-
-function RaidManager:ShowSalaryManager()
-    local taskTitle = nil
-    local frame = AceGUI:Create("Frame")
-    frame:SetTitle('团队工资邮寄管理')
-    frame:SetCallback('OnClose', function (widget) AceGUI:Release(widget) end)
-    frame:SetLayout('Flow')
-    local status = '创建中'
-    frame:SetStatusText(status)
-    local scrollContainer = AceGUI:Create('SimpleGroup')
-    scrollContainer:SetFullWidth(true)
-    scrollContainer:SetFullHeight(true)
-    scrollContainer:SetLayout('Fill')
-    frame:AddChild(scrollContainer)
-    local scroll = AceGUI:Create('ScrollFrame')
-    scroll:SetLayout('List')
-    scrollContainer:AddChild(scroll)
-
-    -- salaries select
-    local salaries = RaidManager.db.global.salaries
-    local selectContainer = AceGUI:Create('InlineGroup')
-    selectContainer:SetLayout("Flow")
-    local dropdown = AceGUI:Create("Dropdown")
-    dropdown:SetLabel('选择工资记录')
-    dropdown:SetText("<空>")
-    dropdown:SetList({[1]="张三",[2]="李四",[3]="王五"})
-    dropdown:SetWidth(15*SCALE_LENGTH)
-    dropdown:SetHeight(SCALE_LENGTH)
-    local newSalaryEditor = RaidManager:renderEditField({
-        label = '新建',
-        width = 20 * SCALE_LENGTH,
-        OnEnterPressed = function(widget, event, text)
-            local salaries = RaidManager.db.global.salaries
-            local newSalary = {
-                title = text
-            }
-            salaries[#salaries + 1] = newSalary
-            RaidManager:Print('保存成功: ' .. RaidManager.db.global.test)
-        end
-    })
-    selectContainer:AddChild(newSalaryEditor)
-    selectContainer:AddChild(dropdown)
-    scroll:AddChild(selectContainer)
-
-    -- content
-    local emailContainer = AceGUI:Create("InlineGroup")
-    emailContainer:SetLayout('List')
-    emailContainer:SetTitle('邮件')
-    emailContainer:SetFullWidth(true)
-    emailContainer:SetHeight(20 * SCALE_LENGTH)
-    emailContainer.noAutoHeight = true
-    local subjectField = RaidManager:renderEditField({
-        label = '标题',
-        width = 400,
-        OnEnterPressed = function(widget, event, text)
-            RaidManager.db.global.test = text
-            RaidManager:Print('保存成功: ' .. RaidManager.db.global.test)
-        end
-    })
-    local bodyField = RaidManager:renderTextareField({
-        label = '内容',
-        width = 400,
-        numLines = 5,
-    })
-    emailContainer:AddChild(subjectField)
-    emailContainer:AddChild(bodyField)
-    scroll:AddChild(emailContainer)
-
-    -- members content
-    local membersGroup = RaidManager:renderMembers()
-    local membersContainer = AceGUI:Create("InlineGroup")
-    membersContainer:SetTitle('最终工资')
-    membersContainer:SetFullWidth(true)
-    membersContainer:AddChild(membersGroup)
-    scroll:AddChild(membersContainer)
-end
-
-
-function RaidManager:renderMembers()
-    local membersContainer = AceGUI:Create('SimpleGroup')
-    membersContainer:SetLayout('Flow')
-    membersContainer:SetWidth(15 * 4.5 * SCALE_LENGTH)
-    membersContainer:SetHeight(15 * 5.5 * SCALE_LENGTH)
-
-    for i=1, 8 do
-        local partyEl = RaidManager:rednerParty(i)
-        membersContainer:AddChild(partyEl)
-    end
-
-    return membersContainer
-end
-
-
-function RaidManager:rednerParty(partyNO)
-    local members = self.partyToMembers[partyNO]
-    members = members or {}
-    local party = AceGUI:Create("InlineGroup")
-    party:SetLayout("List")
-    party:SetTitle(partyNO .. '队')
-    party:SetWidth(15*SCALE_LENGTH)
-    party:SetHeight(27*SCALE_LENGTH)
-    party.noAutoHeight = true
-
-    for i=1, #members do
-        local member = members[i]
-        memberEl = RaidManager:renderEditField({
-            label = member.name,
-            iniVal = 0,
-            width = 12 * SCALE_LENGTH,
-        })
-        party:AddChild(memberEl)
-    end
-
-    return party
-end
-
-
-function RaidManager:rednerSimpleGroup()
-    local simpleGroup = AceGUI:Create('SimpleGroup')
-    return simpleGroup
-end
-
-function RaidManager:renderEditField(meta)
-    local val = meta.iniVal
-    local editbox = AceGUI:Create('EditBox')
-    local width = meta.width or 200
-    editbox:SetLabel(meta.label)
-    editbox:SetWidth(width)
-    editbox:SetText(val)
-    if meta.height then
-        editbox:SetHeight(meta.height)
-    end
-    if meta.OnEnterPressed then
-        editbox:SetCallback('OnEnterPressed', meta.OnEnterPressed)
-    end
-
-    return editbox
-end
-
-
-function RaidManager:renderTextareField(meta)
-    local val = meta.iniVal or ''
-    local editbox = AceGUI:Create('MultiLineEditBox')
-    local width = meta.width or 200
-    editbox:SetLabel(meta.label)
-    editbox:SetWidth(width)
-    editbox:SetText(val)
-    if meta.height then
-        editbox:SetHeight(meta.height)
-    end
-    if meta.numLines then
-        editbox:SetNumLines(meta.numLines)
-    end
-    editbox:SetCallback('OnEnterPressed', function(widget, event, text) val = text end)
-
-    return editbox
-end
-
-
-function RaidManager:renderTankSubsidy()
-    local tankContainer = AceGUI:Create('InlineGroup')
-    tankContainer:SetTitle('坦克')
-    tankContainer:SetWidth(20 * SCALE_LENGTH)
-    tankContainer:SetLayout('List')
-
-    for i=1, 4 do
-        tankContainer:AddChild(RaidManager:renderSubsidyItem({}))
-    end
-
-    return tankContainer
-end
-
-
-function RaidManager:renderHealerSubsidy()
-    local container = AceGUI:Create('InlineGroup')
-    container:SetTitle('治疗')
-    container:SetWidth(20 * SCALE_LENGTH)
-    container:SetLayout('List')
-
-    for i=1, 10 do
-        container:AddChild(RaidManager:renderSubsidyItem({}))
-    end
-
-    return container
-end
-
-function RaidManager:renderDPSSubsidy()
-    local container = AceGUI:Create('InlineGroup')
-    container:SetTitle('DPS')
-    container:SetWidth(20 * SCALE_LENGTH)
-    container:SetLayout('List')
-
-    for i=1, 5 do
-        container:AddChild(RaidManager:renderSubsidyItem({}))
-    end
-
-    return container
-end
-
-
-function RaidManager:renderSubsidyItem(info)
-    local group = AceGUI:Create('SimpleGroup')
-    group:SetLayout('Flow')
-
-    local select = AceGUI:Create('Dropdown')
-    select:SetList({[1]="张三",[2]="李四"})
-    select:SetValue(1)
-    select:SetWidth(9 * SCALE_LENGTH)
-
-    local subsidy = RaidManager:renderEditField({
-        iniVal = 0,
-        width = 8 * SCALE_LENGTH
-    })
-
-    group:AddChild(select)
-    group:AddChild(subsidy)
-
-    return group
-end

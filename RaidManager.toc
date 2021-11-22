@@ -1,4 +1,4 @@
-## Interface: 10000
+## Interface: 20502
 ## Title: Raid Manager
 ## Notes: Raid Manager
 ## Author: Mistkafka
