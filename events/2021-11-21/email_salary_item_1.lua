@@ -136,7 +136,7 @@ emailConfig.names = {
         },
     },
     {
-        name = '五月未央',
+        name = '迷雾卡夫卡',
         salaries = {
             {
                 note = '基本工资(4/4)',
