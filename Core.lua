@@ -1,12 +1,57 @@
 RaidManager = LibStub('AceAddon-3.0'):NewAddon('RaidManager', 'AceConsole-3.0')
 local AceGUI = LibStub("AceGUI-3.0")
 local AceEvent = LibStub('AceEvent-3.0')
+local AceSerializer = LibStub('AceSerializer-3.0')
 addonName = ...
 
 local SCALE_LENGTH = 10
 
 RaidManager.DEFAULT_CONFIG = {}
 
+-- context:
+-- db的存储现在没有问题了，现在缺的是：
+--   1. 一种好用编码方式，把salary-calc计算出来的结果导入进db. base64貌似有问题，ace的方案由容易被修改。wa的方案不知道是怎样的？
+--      a. js计算出结果，转成lua。然后再将lua代码base64编码. ps. 估计也可以是js->json->base64, 见http://regex.info/code/JSON.lua
+--      b. 实现一个输入框，输入base64
+--      c. 解码
+--      d. 用loadString来获取输入结果
+--
+--   2. 一个好的UI来预览这些数据
+
+local base64 = {}
+
+local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/' -- You will need this for encoding/decoding
+-- encoding
+function base64.enc(data)
+    return ((data:gsub('.', function(x)
+        local r,b='',x:byte()
+        for i=8,1,-1 do r=r..(b%2^i-b%2^(i-1)>0 and '1' or '0') end
+        return r;
+    end)..'0000'):gsub('%d%d%d?%d?%d?%d?', function(x)
+        if (#x < 6) then return '' end
+        local c=0
+        for i=1,6 do c=c+(x:sub(i,i)=='1' and 2^(6-i) or 0) end
+        return b:sub(c+1,c+1)
+    end)..({ '', '==', '=' })[#data%3+1])
+end
+
+-- decoding
+function base64.dec(data)
+    data = string.gsub(data, '[^'..b..'=]', '')
+    return (data:gsub('.', function(x)
+        if (x == '=') then return '' end
+        local r,f='',(b:find(x)-1)
+        for i=6,1,-1 do r=r..(f%2^i-f%2^(i-1)>0 and '1' or '0') end
+        return r;
+    end):gsub('%d%d%d?%d?%d?%d?%d?%d?', function(x)
+        if (#x ~= 8) then return '' end
+        local c=0
+        for i=1,8 do c=c+(x:sub(i,i)=='1' and 2^(8-i) or 0) end
+            return string.char(c)
+    end))
+end
+
+local testIdx = 1;
 RaidManager.slashOptions = {
     name = addonName,
     type = 'group',
@@ -32,6 +77,12 @@ RaidManager.slashOptions = {
           desc = 'test',
           type = 'execute',
           func = function()
+              local salaries = RaidManager.db.global.salaries
+              salaries[testIdx] = {
+                  name = '迷雾卡夫卡',
+                  salary = 172 + testIdx,
+              }
+              testIdx = testIdx + 1
              RaidManager:DisplayTotalSalary()
           end
        }
@@ -47,7 +98,14 @@ function RaidManager:OnInitialize()
     if not salaries then
         RaidManager.db.global.salaries = {}
     end
-    RaidManager:Print('测试global配置：' .. (RaidManager.db.global.test or ''))
+    local code = [[
+    emailConfig = {}
+    emailConfig.title = 'test'
+    ]]
+    local f = loadstring(code)
+    f()
+    RaidManager:Print('测试global配置：' .. (base64.enc(TableToStr(emailConfig)) or ''))
+    RaidManager:Print('测试global配置：MTIzNA==')
 end
 
 function RaidManager:OnEnable(args)
@@ -196,3 +254,53 @@ AceEvent:RegisterEvent("MAIL_FAILED", function(e)
     local name = m.name;
     RaidManager:Print('给' .. name .. '的工资发送失败！可能超过每天发送的上限 或者 G不够。');
 end)
+
+function ToStringEx(value)
+    if type(value)=='table' then
+       return TableToStr(value)
+    elseif type(value)=='string' then
+        return "\'"..value.."\'"
+    else
+       return tostring(value)
+    end
+end
+
+function TableToStr(t)
+    if t == nil then return "" end
+    local retstr= "{"
+
+    local i = 1
+    for key,value in pairs(t) do
+        local signal = ","
+        if i==1 then
+          signal = ""
+        end
+
+        if key == i then
+            retstr = retstr..signal..ToStringEx(value)
+        else
+            if type(key)=='number' or type(key) == 'string' then
+                retstr = retstr..signal..'['..ToStringEx(key).."]="..ToStringEx(value)
+            else
+                if type(key)=='userdata' then
+                    retstr = retstr..signal.."*s"..TableToStr(getmetatable(key)).."*e".."="..ToStringEx(value)
+                else
+                    retstr = retstr..signal..key.."="..ToStringEx(value)
+                end
+            end
+        end
+
+        i = i+1
+    end
+
+     retstr = retstr.."}"
+     return retstr
+end
+
+function StrToTable(str)
+    if str == nil or type(str) ~= "string" then
+        return
+    end
+
+    return loadstring("return " .. str)()
+end
