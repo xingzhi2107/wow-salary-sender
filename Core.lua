@@ -98,14 +98,8 @@ local function arrayShift(obj)
 end
 
 
-local sents = {
-}
-
-local names = {
-
-}
-
 local currIndex = 1;
+local names = emailConfig.names
 
 function RaidManager:SendCurrSalaryMail()
     if currIndex > #names then
@@ -122,8 +116,8 @@ function RaidManager:SendCurrSalaryMail()
         player_salary = player_salary + salary_item.value
     end
     note = note .. '  共计:  ' .. player_salary
-    local subject = "11月21日，毒蛇神殿"
-    local body = "基本工资：(17800) / 25 = 712G" .. note
+    local subject = emailConfig.subject;
+    local body = emailConfig.body .. note
     local unit = 100 * 100; -- 1g
     local salary = player_salary * unit;
     RaidManager:Print('准备给' .. player.name .. '发送工资. ' .. note);
