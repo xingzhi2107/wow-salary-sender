@@ -4,6 +4,8 @@ local Libs = Addon.Libs
 local AceAddon = Libs.AceAddon
 local AceEvent = Libs.AceEvent
 local AceGUI = Libs.AceGUI
+local DB = Addon.DB
+local access = Addon.access
 RaidManager = AceAddon:NewAddon('RaidManager', 'AceConsole-3.0')
 
 local SCALE_LENGTH = 10
@@ -71,23 +73,8 @@ RaidManager.slashOptions = {
 function RaidManager:OnInitialize()
     RaidManager:Print(addonName .. '初始化...')
     LibStub("AceConfig-3.0"):RegisterOptionsTable(addonName, RaidManager.slashOptions, {"raidm"})
+    DB:initDB()
     RaidManager:Print(addonName .. '初始化成功！')
-    self.db = LibStub("AceDB-3.0"):New("RaidManagerDB")
-    local salaries = RaidManager.db.global.salaries
-    if not salaries then
-        RaidManager.db.global.salaries = {}
-    end
-    local code = [[
-    emailConfig = {}
-    emailConfig.title = 'test'
-    ]]
-    local f = loadstring(code)
-    f()
-    local eventInfos = RaidManager.db.global.events
-    if not eventInfos then
-        RaidManager.db.global.events = {}
-    end
-    RaidManager:Print('测试global配置：MTIzNA==')
 end
 
 function RaidManager:OnEnable(args)
@@ -146,7 +133,7 @@ function RaidManager:SendCurrSalaryMail()
 end
 
 function RaidManager:RenderListFrame()
-    local eventInfos = RaidManager.db.global.events
+    local result = access.EventAccess:queryEvents()
     if RaidManager.listFrame and RaidManager.listFrame:IsShown() then
         AceGUI:Release(RaidManager.listFrame)
     end
@@ -154,19 +141,14 @@ function RaidManager:RenderListFrame()
         RaidManager:HandleImportEvent()
     end
     RaidManager.listFrame = Frames:EventListFrame({
-        eventInfos = eventInfos,
+        eventInfos = result.events,
         onClickImport = onClickImport,
     })
 end
 
 function RaidManager:HandleImportEvent()
-    local mockEvent = {
-        id = 1,
-        title = '風暴',
-        eventTime = 1637762732,
-    }
-    local eventInfos = RaidManager.db.global.events
-    Utils:arrPush(eventInfos, mockEvent)
+    print('import data')
+    access.EventAccess:importEvent()
     RaidManager:RenderListFrame()
 end
 
