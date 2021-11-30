@@ -7,6 +7,7 @@ Addon.Libs = {
     AceGUI = _G.LibStub('AceGUI-3.0'),
     AceEvent = _G.LibStub('AceEvent-3.0'),
     AceDB = _G.LibStub('AceDB-3.0'),
+    AceTimer = _G.LibStub('AceTimer-3.0'),
 }
 
 Addon.DB = {
@@ -22,3 +23,6 @@ Addon.UI = {
 
 -- Addon.ENV = 'PROD'
 Addon.ENV = 'DEV'
+
+Addon.EventManager = {}
+Addon.Events = {}

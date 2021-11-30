@@ -9,6 +9,8 @@ embeds.xml
 src/init.lua
 
 src/utils.lua
+src/events/events.lua
+src/events/event-manager.lua
 
 src/db.lua
 
@@ -17,6 +19,7 @@ src/access/event.lua
 
 # UI
 src/UI/components/EventListItem.lua
+src/UI/components/EventDetailContainer.lua
 src/UI/frames/EventListFrame.lua
 
 Core.lua

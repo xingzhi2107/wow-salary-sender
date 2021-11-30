@@ -140,14 +140,23 @@ function RaidManager:RenderListFrame()
     local function onClickImport()
         RaidManager:HandleImportEvent()
     end
+    local function onClickItem(eventInfo)
+        RaidManager.currEvent = eventInfo
+        RaidManager:RenderListFrame()
+    end
+    local currEvent = RaidManager.currEvent
+    if currEvent == nil and #result.events > 0 then
+        currEvent = result.events[1]
+    end
     RaidManager.listFrame = Frames:EventListFrame({
         eventInfos = result.events,
         onClickImport = onClickImport,
+        onClickItem = onClickItem,
+        currEvent = currEvent,
     })
 end
 
 function RaidManager:HandleImportEvent()
-    print('import data')
     access.EventAccess:importEvent()
     RaidManager:RenderListFrame()
 end
@@ -197,23 +206,23 @@ function RaidManager:DisplayTotalSalary()
     RaidManager:Print('全部工资总计：' .. totalSalary)
 end
 
-AceEvent:RegisterEvent("MAIL_SEND_SUCCESS", function(e)
-    if currIndex > #names then
-        RaidManager:Print('所有人的工资发送完毕');
-        return;
-    end
-    local player = names[currIndex];
-    local name = player.name;
-    RaidManager:Print('给' .. name .. '的工资发送成功！');
-    currIndex = currIndex + 1;
-end)
-
-AceEvent:RegisterEvent("MAIL_FAILED", function(e)
-    if currIndex > #names then
-        RaidManager:Print('所有人的工资发送完毕');
-        return;
-    end
-    local m = names[currIndex];
-    local name = m.name;
-    RaidManager:Print('给' .. name .. '的工资发送失败！可能超过每天发送的上限 或者 G不够。');
-end)
+--AceEvent:RegisterEvent("MAIL_SEND_SUCCESS", function(e)
+--    if currIndex > #names then
+--        RaidManager:Print('所有人的工资发送完毕');
+--        return;
+--    end
+--    local player = names[currIndex];
+--    local name = player.name;
+--    RaidManager:Print('给' .. name .. '的工资发送成功！');
+--    currIndex = currIndex + 1;
+--end)
+--
+--AceEvent:RegisterEvent("MAIL_FAILED", function(e)
+--    if currIndex > #names then
+--        RaidManager:Print('所有人的工资发送完毕');
+--        return;
+--    end
+--    local m = names[currIndex];
+--    local name = m.name;
+--    RaidManager:Print('给' .. name .. '的工资发送失败！可能超过每天发送的上限 或者 G不够。');
+--end)

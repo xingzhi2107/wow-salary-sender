@@ -3,7 +3,7 @@ local Libs = Addon.Libs
 local AceGUI = Libs.AceGUI
 local Components = Addon.UI.Components
 
-function Components:EventListItem(eventInfo)
+function Components:EventListItem(eventInfo, onClick)
     local title = eventInfo.title
     local id = eventInfo.id
     local eventTime = eventInfo.eventTime
@@ -13,7 +13,9 @@ function Components:EventListItem(eventInfo)
     btn:SetText(btnText)
     btn:SetWidth(250)
     btn:SetCallback('OnClick', function()
-        print('click event item ' .. id)
+        if onClick then
+            onClick(eventInfo)
+        end
     end)
 
     return btn

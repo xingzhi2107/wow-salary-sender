@@ -115,3 +115,31 @@ function Utils:arrSlice(arr, startIdx, endIdx)
 
     return sliced
 end
+
+function Utils:arrFind(arr, condFunc)
+    for i=1, #arr do
+        local item = arr[i]
+        if condFunc(item) then
+            return item
+        end
+    end
+    return nil
+end
+
+function Utils:arrIndexBy(arr, key)
+    local index = {}
+
+    local getKey = nil
+    if type(key) == 'function' then
+        getKey = key
+    else
+        getKey = function(item) return item[key] end
+    end
+
+    self:arrForEach(arr, function(item)
+        local keyVal = getKey(item)
+        index[keyVal] = item
+    end)
+
+    return index
+end

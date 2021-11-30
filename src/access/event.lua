@@ -42,6 +42,11 @@ local EventAccess = {}
 Addon.access.EventAccess = EventAccess
 local Utils = Addon.Utils
 local DB = Addon.DB
+local Libs = Addon.Libs
+local AceEvent = Libs.AceEvent
+local AceTimer = Libs.AceTimer
+local EventManager = Addon.EventManager
+
 
 function EventAccess:queryEvents(opts)
     if opts == nil then
@@ -89,6 +94,36 @@ function EventAccess:importEvent(newEvent)
 
     local mockId = #eventsTbl + 1
     local mockTime = 1609430400 + 3600 * 24 * mockId * 2
+    local salaries = {}
+    for i=1, 50 do
+        local mockSalary = {
+            uuid = "" .. mockId .. "-" .. i,
+            eventId = mockId,
+            name = "当时的月亮",
+            total = 100,
+            detailItems = {
+                {
+                    item = "基本工资(4/4)",
+                    value = 138.34
+                },
+                {
+                    item = "罚款",
+                    value = -38.34
+                },
+            },
+            optLogs = {
+                "2021-11-28 18:00:32 邮寄失败。 G币不够。",
+                "2021-11-28 18:00:33 邮寄失败。 G币不够。",
+                "2021-11-28 18:10:34 邮寄失败。 邮寄次数达到上限。",
+                "2021-11-28 18:11:34 手动删除",
+                "2021-11-28 18:12:34 手动恢复",
+                "2021-11-28 18:12:34 手动标记为已邮寄",
+            },
+            timeRemoved = 0,
+            timeSent = 0,
+        }
+        salaries[i] = mockSalary
+    end
     local mockNewEvent = {
         id = mockId,
         title = "毒蛇神殿: " .. mockId,
@@ -97,34 +132,7 @@ function EventAccess:importEvent(newEvent)
         importTime = mockTime + 3600,
         isCompleted = false,
         timeRemoved = 0,
-        salaries = {
-            {
-                uuid = mockId .. "1",
-                eventId = mockId,
-                name = "迷雾卡夫卡",
-                total = 100,
-                detailItem = {
-                    {
-                        item = "基本工资(4/4)",
-                        salary = 138.34
-                    },
-                    {
-                        item = "罚款",
-                        salary = -38.34
-                    },
-                },
-                optLogs = {
-                    "2021-11-28 18:00:32 邮寄失败。 G币不够。",
-                    "2021-11-28 18:00:33 邮寄失败。 G币不够。",
-                    "2021-11-28 18:10:34 邮寄失败。 邮寄次数达到上限。",
-                    "2021-11-28 18:11:34 手动删除",
-                    "2021-11-28 18:12:34 手动恢复",
-                    "2021-11-28 18:12:34 手动标记为已邮寄",
-                },
-                timeRemoved = 0,
-                timeSent = 0,
-            },
-        }
+        salaries = salaries
     }
 
     newEvent = mockNewEvent
@@ -137,10 +145,117 @@ end
 function EventAccess:recoveryEvent()
 end
 
-function EventAccess:successSendSalary(eventId, salaryId)
+function EventAccess:sendSalary(eventId, salaryId)
+    local hasEmailPending = C_Mail.IsCommandPending()
+    if hasEmailPending then
+        print('发送失败，正在发送其它邮件，请稍后重试！')
+        return false
+    end
+
+    if self.sendingSalary ~= nil then
+        print('发送失败，已经有一封工资邮件正在发送，请稍后重试！')
+        return false
+    end
+    local eventsTbl = DB:getTable('events')
+    local id2Event = Utils:arrIndexBy(eventsTbl, 'id')
+    local event = id2Event[eventId]
+    if not event then
+        print('发送失败，未找到相应的活动。活动ID：' .. eventId)
+        return false
+    end
+
+    local id2Salary = Utils:arrIndexBy(event.salaries, 'uuid')
+    local salary = id2Salary[salaryId]
+    if not salary then
+        print('发送失败，未找到相应的工资。活动ID：' .. eventId .. '，工资ID：' .. salaryId)
+        return false
+    end
+
+    if salary.timeSent ~= 0 then
+        print('发送失败，该工资已经邮寄，请勿重复邮寄。活动ID：' .. eventId .. '，工资ID：' .. salaryId)
+        return false
+    end
+
+    if salary.timeRemoved ~= 0 then
+        print('发送失败，该工资已被删除，请勿邮寄。活动ID：' .. eventId .. '，工资ID：' .. salaryId)
+        return false
+    end
+
+
+    local note = '[' .. salary.name ..']工资明细: '
+    Utils:arrForEach(salary.detailItems, function(detailItem)
+        note = note .. detailItem.item .. ': ' .. detailItem.value .. ', '
+    end)
+    note = note .. '  共计:  ' .. salary.total
+    local dateTimeStr = date('%Y-%m-%d', event.eventTime)
+    local subject = dateTimeStr .. "，" .. event.title
+    local body = event.emailBody .. "\n\n" .. note
+    local unit = 100 * 100 -- 1g
+    unit = 1 -- 1铜
+    local sendMoney = salary.total * unit;
+    local balance = GetMoney()
+    if sendMoney > balance then
+        print('发送失败，余额不足。活动ID：' .. eventId .. '，工资ID：' .. salaryId)
+        return false
+    end
+
+    local mailCost = GetSendMailPrice()
+    sendMoney = sendMoney - mailCost
+    body = body .. "\n\n邮费：" .. mailCost .. "铜"
+
+    self.sendingSalary = salary
+    SetSendMailMoney(sendMoney)
+    SendMail(salary.name, subject, body)
+
+    return true
 end
 
-function EventAccess:failedSendSalary(eventId, salaryId, reason)
+function EventAccess:successSentCurrSalary()
+    local salary = self.sendingSalary
+    self.sendingSalary = nil
+    RaidManager:Print('给' .. salary.name .. '的工资发送成功！')
+    salary.timeSent = time()
+    EventManager:Fire('OnSendSalarySuccess', Utils:objDeepCopy(salary))
+    if self.autoNext then
+        AceTimer:ScheduleTimer(function()
+            EventAccess:sendNextSalary(salary.eventId, true)
+        end, 1)
+    end
+end
+
+function EventAccess:failedSendCurrSalary()
+    local salary = self.sendingSalary
+    self.sendingSalary = nil
+    self.autoNext = false
+    RaidManager:Print('给' .. salary.name .. '的工资发送失败！可能超过每天发送的上限 或者 G不够。');
+    EventManager:Fire('OnSendSalaryFailed', Utils:objDeepCopy(salary))
+end
+
+
+function EventAccess:sendNextSalary(eventId, autoNext)
+    local hasEmailPending = C_Mail.IsCommandPending()
+    if hasEmailPending then
+        print('发送失败，正在发送其它邮件，请稍后重试！')
+        return false
+    end
+
+    if self.sendingSalary ~= nil then
+        print('发送失败，已经有一封工资邮件正在发送，请稍后重试！')
+        return false
+    end
+    local eventsTbl = DB:getTable('events')
+    local id2Event = Utils:arrIndexBy(eventsTbl, 'id')
+    local event = id2Event[eventId]
+    if not event then
+        print('发送失败，未找到相应的活动。活动ID：' .. eventId)
+        return false
+    end
+    local needSendSalaries = Utils:arrFilter(event.salaries, function(item) return item.timeSent == 0 end)
+    if #needSendSalaries > 0 then
+        self.autoNext = autoNext
+        local toSendSalary = needSendSalaries[1]
+        EventAccess:sendSalary(eventId, toSendSalary.uuid)
+    end
 end
 
 function EventAccess:markSalarySent(eventId, salaryId)
@@ -151,3 +266,12 @@ end
 
 function EventAccess:recoverySalary(eventId, salaryId)
 end
+
+
+AceEvent:RegisterEvent("MAIL_SEND_SUCCESS", function(e)
+    EventAccess:successSentCurrSalary()
+end)
+
+AceEvent:RegisterEvent("MAIL_FAILED", function(e)
+    EventAccess:failedSendCurrSalary()
+end)
