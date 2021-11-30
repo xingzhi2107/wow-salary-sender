@@ -6,6 +6,7 @@ local Com = Addon.UI.Components
 local Utils = Addon.Utils
 local access = Addon.access
 local EventManager = Addon.EventManager
+local AceTimer = Libs.AceTimer
 
 function Com:EventDetailContainer(eventInfo)
     if eventInfo == nil then
@@ -31,8 +32,17 @@ function Com:EventDetailContainer(eventInfo)
     local sendAllBtn = AceGUI:Create('Button')
     sendAllBtn:SetText('邮寄所有工资')
     sendAllBtn:SetWidth(200)
+    local autoSending = false
     sendAllBtn:SetCallback('OnClick', function()
-        access.EventAccess:sendNextSalary(eventInfo.id, true)
+        AceTimer:CancelAllTimers()
+        if autoSending then
+            autoSending = false
+            sendAllBtn:SetText('邮寄所有工资')
+        else
+            autoSending = true
+            sendAllBtn:SetText('暂停')
+            access.EventAccess:sendNextSalary(eventInfo.id, true)
+        end
     end)
 
     local emailBody = AceGUI:Create('MultiLineEditBox')
