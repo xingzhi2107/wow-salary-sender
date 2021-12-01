@@ -1,6 +1,8 @@
 local _, Addon = ...
 
 Addon.Utils = {}
+-- json utils
+Addon.JSON = nil
 
 Addon.Libs = {
     AceAddon = _G.LibStub('AceAddon-3.0'),

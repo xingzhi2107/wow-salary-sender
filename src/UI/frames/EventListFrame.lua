@@ -7,7 +7,7 @@ local Utils = Addon.Utils
 
 function Frames:EventListFrame(props)
     local eventInfos = props.eventInfos
-    local onClickImport = props.onClickImport
+    local onImportSuccess = props.onImportSuccess
     local onClickItem = props.onClickItem
     local currEventInfo = props.currEvent
 
@@ -34,7 +34,9 @@ function Frames:EventListFrame(props)
     local importBtn = AceGUI:Create('Button')
     importBtn:SetText('导入')
     importBtn:SetCallback('OnClick', function()
-        onClickImport(frame)
+        Frames:ImportEventFrame({
+            onImportSuccess = onImportSuccess,
+        })
     end)
     scroll:AddChild(importBtn)
 

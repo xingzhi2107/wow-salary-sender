@@ -47,7 +47,7 @@ function Com:EventDetailContainer(eventInfo)
 
     local emailBody = AceGUI:Create('MultiLineEditBox')
     emailBody:SetLabel("邮件内容：")
-    emailBody:SetText(eventInfo.emailBody .. eventInfo.emailBody .. eventInfo.emailBody)
+    emailBody:SetText(eventInfo.emailBody)
     emailBody:SetNumLines(7)
     emailBody:SetDisabled(true)
     emailBody:SetWidth(500)
@@ -57,11 +57,15 @@ function Com:EventDetailContainer(eventInfo)
     scroll:AddChild(emailBody)
     scroll:AddChild(sendAllBtn)
 
+    local salariesEl = AceGUI:Create('InlineGroup')
+    salariesEl:SetLayout('Flow')
+    salariesEl:SetWidth(578)
+    scroll:AddChild(salariesEl)
     for i=1, #eventInfo.salaries do
         local salaryInfo = eventInfo.salaries[i]
-        local salary = AceGUI:Create('InlineGroup')
-        salary:SetLayout('Flow')
-        salary:SetWidth(500)
+        local idxLabel = AceGUI:Create('Label')
+        idxLabel:SetText('序号：' .. i)
+        idxLabel:SetWidth(80)
 
         local name = AceGUI:Create('Label')
         name:SetText('角色名：' .. salaryInfo.name)
@@ -72,10 +76,10 @@ function Com:EventDetailContainer(eventInfo)
         salaryEl:SetWidth(150)
 
         local action = Com:SendSalaryBtn(eventInfo.id, salaryInfo)
-        salary:AddChild(name)
-        salary:AddChild(salaryEl)
-        salary:AddChild(action)
-        scroll:AddChild(salary)
+        salariesEl:AddChild(idxLabel)
+        salariesEl:AddChild(name)
+        salariesEl:AddChild(salaryEl)
+        salariesEl:AddChild(action)
     end
 
     return root

@@ -137,8 +137,8 @@ function RaidManager:RenderListFrame()
     if RaidManager.listFrame and RaidManager.listFrame:IsShown() then
         AceGUI:Release(RaidManager.listFrame)
     end
-    local function onClickImport()
-        RaidManager:HandleImportEvent()
+    local function onClickImport(newEventInfo)
+        RaidManager:HandleImportEvent(newEventInfo)
     end
     local function onClickItem(eventInfo)
         RaidManager.currEvent = eventInfo
@@ -150,14 +150,14 @@ function RaidManager:RenderListFrame()
     end
     RaidManager.listFrame = Frames:EventListFrame({
         eventInfos = result.events,
-        onClickImport = onClickImport,
+        onImportSuccess = onClickImport,
         onClickItem = onClickItem,
         currEvent = currEvent,
     })
 end
 
-function RaidManager:HandleImportEvent()
-    access.EventAccess:importEvent()
+function RaidManager:HandleImportEvent(newEventInfo)
+    access.EventAccess:importEvent(newEventInfo)
     RaidManager:RenderListFrame()
 end
 
