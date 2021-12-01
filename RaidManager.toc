@@ -5,5 +5,23 @@
 ## Version: 0.1
 ## SavedVariables: RaidManagerDB
 embeds.xml
-curr.lua
+
+src/init.lua
+
+src/utils.lua
+src/json.lua
+src/events/events.lua
+src/events/event-manager.lua
+
+src/db.lua
+
+src/access/base.lua
+src/access/event.lua
+
+# UI
+src/UI/components/EventListItem.lua
+src/UI/components/EventDetailContainer.lua
+src/UI/frames/EventListFrame.lua
+src/UI/frames/ImportEventFrame.lua
+
 Core.lua

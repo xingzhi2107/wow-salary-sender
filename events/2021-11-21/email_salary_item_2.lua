@@ -5,7 +5,6 @@
 
 
 
-emailConfig = {}
 emailConfig.subject = "2021-11-21, 毒舌神殿"
 emailConfig.body = ""
 emailConfig.names = {
@@ -64,4 +63,3 @@ emailConfig.names = {
         },
     },
 }
-      
