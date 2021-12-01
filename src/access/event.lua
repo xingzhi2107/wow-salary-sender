@@ -116,7 +116,6 @@ function EventAccess:sendSalary(eventId, salaryId)
     local subject = dateTimeStr .. "，" .. event.title
     local body = event.emailBody .. "\n\n" .. note
     local unit = 100 * 100 -- 1g
-    unit = 1 -- 1铜
     local sendMoney = salary.total * unit;
     local balance = GetMoney()
     if sendMoney > balance then
@@ -127,6 +126,11 @@ function EventAccess:sendSalary(eventId, salaryId)
     local mailCost = GetSendMailPrice()
     sendMoney = sendMoney - mailCost
     body = body .. "\n\n邮费：" .. mailCost .. "铜"
+
+    if Addon.IS_TEST_MODE then
+        subject = "[测试] " ..  subject
+        sendMoney = 1
+    end
 
     self.sendingSalary = salary
     SetSendMailMoney(sendMoney)

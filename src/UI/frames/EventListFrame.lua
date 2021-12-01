@@ -8,6 +8,8 @@ local Utils = Addon.Utils
 function Frames:EventListFrame(props)
     local eventInfos = props.eventInfos
     local onImportSuccess = props.onImportSuccess
+    local onTestModeChanged = props.onTestModeChanged
+    local onClearTestData = props.onClearTestData
     local onClickItem = props.onClickItem
     local currEventInfo = props.currEvent
 
@@ -30,6 +32,26 @@ function Frames:EventListFrame(props)
     local scroll = AceGUI:Create('ScrollFrame')
     scroll:SetLayout('List')
     eventListContainer:AddChild(scroll)
+
+    local testModeCheckbox = AceGUI:Create('CheckBox')
+    testModeCheckbox:SetLabel('测试模式')
+    testModeCheckbox:SetType('checkbox')
+    testModeCheckbox:SetValue(Addon.IS_TEST_MODE)
+    testModeCheckbox:SetCallback('OnValueChanged', function()
+        local isTestMode = testModeCheckbox:GetValue();
+        Addon.IS_TEST_MODE = isTestMode;
+        onTestModeChanged(isTestMode);
+    end)
+    scroll:AddChild(testModeCheckbox)
+
+    if Addon.IS_TEST_MODE then
+        local resetTestDataBtn = AceGUI:Create('Button')
+        resetTestDataBtn:SetText('清除测试数据')
+        resetTestDataBtn:SetCallback('OnClick', function()
+            onClearTestData()
+        end)
+        scroll:AddChild(resetTestDataBtn)
+    end
 
     local importBtn = AceGUI:Create('Button')
     importBtn:SetText('导入')

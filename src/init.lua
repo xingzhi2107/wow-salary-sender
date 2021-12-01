@@ -23,8 +23,7 @@ Addon.UI = {
     Frames = {}
 }
 
--- Addon.ENV = 'PROD'
-Addon.ENV = 'DEV'
+Addon.IS_TEST_MODE = false
 
 Addon.EventManager = {}
 Addon.Events = {}

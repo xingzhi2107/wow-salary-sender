@@ -144,6 +144,16 @@ function RaidManager:RenderListFrame()
         RaidManager.currEvent = eventInfo
         RaidManager:RenderListFrame()
     end
+
+    local function onTestModeChanged(isTestMode)
+        RaidManager.currEvent = nil
+        RaidManager:RenderListFrame()
+    end
+    local function onClearTestData()
+        DB:resetTestData()
+        RaidManager.currEvent = nil
+        RaidManager:RenderListFrame()
+    end
     local currEvent = RaidManager.currEvent
     if currEvent == nil and #result.events > 0 then
         currEvent = result.events[1]
@@ -153,6 +163,8 @@ function RaidManager:RenderListFrame()
         onImportSuccess = onClickImport,
         onClickItem = onClickItem,
         currEvent = currEvent,
+        onTestModeChanged = onTestModeChanged,
+        onClearTestData = onClearTestData,
     })
 end
 
