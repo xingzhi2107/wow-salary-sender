@@ -27,3 +27,6 @@ Addon.IS_TEST_MODE = false
 
 Addon.EventManager = {}
 Addon.Events = {}
+
+Addon.ItemToChar = {}
+Addon.type2Items = {}

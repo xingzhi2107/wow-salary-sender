@@ -9,6 +9,7 @@ embeds.xml
 src/init.lua
 
 src/utils.lua
+src/data/item.lua
 src/json.lua
 src/events/events.lua
 src/events/event-manager.lua
