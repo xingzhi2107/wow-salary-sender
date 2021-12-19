@@ -67,6 +67,21 @@ function Utils:arrPush(arr, item)
     table.insert(arr, item)
 end
 
+function Utils:arrChunkBySize(arr, size)
+    local chunks = {}
+    local chunk = {}
+    Utils:arrPush(chunks, chunk)
+    Utils:arrForEach(arr, function(item)
+        Utils:arrPush(chunk, item)
+        if #chunk == size then
+            chunk = {}
+            Utils:arrPush(chunks, chunk)
+        end
+    end)
+
+    return chunks
+end
+
 function Utils:arrSortBy(arr, key, reverse)
     if reverse == nil then
         reverse = false

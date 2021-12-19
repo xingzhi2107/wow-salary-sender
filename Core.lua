@@ -11,6 +11,8 @@ RaidManager = AceAddon:NewAddon('RaidManager', 'AceConsole-3.0')
 local SCALE_LENGTH = 10
 local Utils = Addon.Utils
 local Frames = Addon.UI.Frames
+local ItemToChar = Addon.ItemToChar
+local type2Items = Addon.type2Items
 
 RaidManager.DEFAULT_CONFIG = {}
 
@@ -65,6 +67,22 @@ RaidManager.slashOptions = {
             type = 'execute',
             func = function()
                 RaidManager:RenderListFrame()
+            end
+        },
+        archive = {
+            name = 'archive',
+            desc = '归档材料到小号仓库',
+            type = 'execute',
+            func = function()
+                RaidManager:ArchiveItems()
+            end
+        },
+        pick = {
+            name = 'pick',
+            desc = '从银行取出材料',
+            type = 'execute',
+            func = function()
+                RaidManager:PickItemsFromBank()
             end
         }
     }
@@ -238,3 +256,66 @@ end
 --    local name = m.name;
 --    RaidManager:Print('给' .. name .. '的工资发送失败！可能超过每天发送的上限 或者 G不够。');
 --end)
+
+local function containerForEach(bagIdStart, bagIdEnd, callback)
+    for bagId = bagIdStart, bagIdEnd do
+        local slotsCount = GetContainerNumSlots(bagId)
+        for slot = 1, slotsCount do
+            local itemId = GetContainerItemID(bagId, slot)
+            callback(bagId, slot, itemId)
+        end
+    end
+end
+
+local function buildChar2Locations(bagIdStart, bagIdEnd)
+    local type2Locations = {}
+    containerForEach(bagIdStart, bagIdEnd, function(bagId, slot, itemId)
+        if not itemId then
+            return
+        end
+        local char = ItemToChar[itemId]
+        if not char then
+            return
+        end
+
+        if not type2Locations[char] then
+            type2Locations[char] = {}
+        end
+        local locations = type2Locations[char]
+        Utils:arrPush(locations, {
+            bagId = bagId,
+            slot = slot,
+            itemId = itemId,
+        })
+    end)
+    return type2Locations
+end
+
+function RaidManager:ArchiveItems()
+    local type2Locations = buildChar2Locations(0, 4)
+
+    for char, locations in pairs(type2Locations) do
+        C_FriendList.AddFriend(char)
+        local chunks = Utils:arrChunkBySize(locations, 12)
+        local chunk = chunks[1] -- 下一步再实现循环
+        Utils:arrForEach(chunk, function(location)
+            UseContainerItem(location.bagId, location.slot)
+        end)
+        -- Utils:arrForEach(chunks, function(chunk)
+        --    Utils:arrForEach(chunk, function(location)
+        --        UseContainerItem(location.bagId, location.slot)
+        --    end)
+        -- end)
+        SendMail(char, '材料', '')
+        return -- 发送玩一封，直接推出。往后再抽象出连续发送邮件的工具函数。
+    end
+end
+
+function RaidManager:PickItemsFromBank()
+    local type2Locations = buildChar2Locations(5, 11)
+    for char, locations in pairs(type2Locations) do
+        Utils:arrForEach(locations, function(location)
+            UseContainerItem(location.bagId, location.slot)
+        end)
+    end
+end
