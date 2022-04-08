@@ -106,6 +106,15 @@ function EventAccess:sendSalary(eventId, salaryId)
         return false
     end
 
+    local senderPlayerName = GetUnitName('player')
+    local senderPlayerServer = GetRealmName()
+    local isSender = salary.name == senderPlayerName and salary.server == senderPlayerServer
+    if isSender then
+        self.sendingSalary = salary
+        EventAccess:successSentCurrSalary()
+        return true;
+    end
+
 
     local note = '[' .. salary.name ..']工资明细: \n\n'
     Utils:arrForEach(salary.detailItems, function(detailItem)
@@ -152,7 +161,7 @@ function EventAccess:successSentCurrSalary()
     if self.autoNext then
         AceTimer:ScheduleTimer(function()
             EventAccess:sendNextSalary(salary.eventId, true)
-        end, 1)
+        end, 0.3)
     end
 end
 
