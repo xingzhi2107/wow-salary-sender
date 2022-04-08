@@ -142,6 +142,9 @@ end
 
 function EventAccess:successSentCurrSalary()
     local salary = self.sendingSalary
+    if not salary then
+        return
+    end
     self.sendingSalary = nil
     RaidManager:Print('给' .. salary.name .. '的工资发送成功！')
     salary.timeSent = time()
@@ -155,6 +158,9 @@ end
 
 function EventAccess:failedSendCurrSalary()
     local salary = self.sendingSalary
+    if not salary then
+        return
+    end
     self.sendingSalary = nil
     self.autoNext = false
     RaidManager:Print('给' .. salary.name .. '的工资发送失败！可能超过每天发送的上限 或者 G不够。');

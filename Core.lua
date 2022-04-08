@@ -273,7 +273,21 @@ local function buildChar2Locations(bagIdStart, bagIdEnd)
         if not itemId then
             return
         end
+        local iName, iLink, iRarity, iLevel, iMinLevel, iType, iSubType, iStackCount, iEquipLoc, iIcon, iSellPrice, iClassID, iSubClassID, bType, eID, iSetID, isCraftingReagent = GetItemInfo(itemId)
+        local itemLoc = ItemLocation:CreateFromBagAndSlot(bagId, slot)
+
+        if C_Item.IsBound(itemLoc) then
+            return
+        end
+
         local char = ItemToChar[itemId]
+        if not char then
+            -- 所有未绑定的装备都给附魔号
+            if iEquipLoc and iRarity > 1 then
+                char = type2Items['魔'].character;
+            end
+        end
+
         if not char then
             return
         end
@@ -292,6 +306,7 @@ local function buildChar2Locations(bagIdStart, bagIdEnd)
 end
 
 function RaidManager:ArchiveItems()
+    print('builod')
     local type2Locations = buildChar2Locations(0, 4)
 
     for char, locations in pairs(type2Locations) do
