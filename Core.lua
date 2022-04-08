@@ -84,6 +84,14 @@ RaidManager.slashOptions = {
             func = function()
                 RaidManager:PickItemsFromBank()
             end
+        },
+        showitem = {
+            name = 'showitem',
+            desc = '获取物品信息',
+            type = 'execute',
+            func = function()
+                RaidManager:ShowItem()
+            end
         }
     }
 }
@@ -273,6 +281,8 @@ local function buildChar2Locations(bagIdStart, bagIdEnd)
         if not itemId then
             return
         end
+        -- iName
+        -- iType: 跟拍卖行的物品类型一样：武器/护甲/容器/消耗品/...
         local iName, iLink, iRarity, iLevel, iMinLevel, iType, iSubType, iStackCount, iEquipLoc, iIcon, iSellPrice, iClassID, iSubClassID, bType, eID, iSetID, isCraftingReagent = GetItemInfo(itemId)
         local itemLoc = ItemLocation:CreateFromBagAndSlot(bagId, slot)
 
@@ -283,8 +293,11 @@ local function buildChar2Locations(bagIdStart, bagIdEnd)
         local char = ItemToChar[itemId]
         if not char then
             -- 所有未绑定的装备都给附魔号
-            if iEquipLoc and iRarity > 1 then
+            if iEquipLoc and iRarity > 1 and (iType == '武器' or iType == '护甲') then
                 char = type2Items['魔'].character;
+            end
+            if iType == '配方' then
+                char = type2Items['配方'].character;
             end
         end
 
@@ -303,6 +316,39 @@ local function buildChar2Locations(bagIdStart, bagIdEnd)
         })
     end)
     return type2Locations
+end
+
+function RaidManager:ShowItem()
+    local infoType, info1, info2 = GetCursorInfo();
+    if infoType == nil then
+        RaidManager:Print('未选中任何物品')
+        return
+    end
+    if infoType ~= 'item' then
+        RaidManager:Print('选择的东西不是物品')
+        return
+    end
+    -- iType: 跟拍卖行的物品类型一样：武器/护甲/容器/消耗品/...
+    local itemId = info1;
+    local iName, iLink, iRarity, iLevel, iMinLevel, iType, iSubType, iStackCount, iEquipLoc, iIcon, iSellPrice, iClassID, iSubClassID, bType, eID, iSetID, isCraftingReagent = GetItemInfo(itemId)
+    RaidManager:Print('Item Id: ' .. itemId)
+    RaidManager:Print('iName: ' .. iName)
+    RaidManager:Print('iLink: ' .. iLink)
+    RaidManager:Print('iRarity: ' .. iRarity)
+    RaidManager:Print('iLevel: ' .. iLevel)
+    RaidManager:Print('iMinLevel: ' .. iMinLevel)
+    RaidManager:Print('iType: ' .. iType)
+    RaidManager:Print('iSubType: ' .. iSubType)
+    RaidManager:Print('iStackCount: ' .. iStackCount)
+    RaidManager:Print('iEquipLoc: ' .. iEquipLoc)
+    RaidManager:Print('iIcon: ' .. iIcon)
+    RaidManager:Print('iSellPrice: ' .. iSellPrice)
+    RaidManager:Print('iClassID: ' .. iClassID)
+    RaidManager:Print('iSubClassID: ' .. iSubClassID)
+    RaidManager:Print('bType: ' .. bType)
+    RaidManager:Print('eID: ' .. eID)
+    RaidManager:Print('iSetID: ' .. iSetID)
+    RaidManager:Print('isCraftingReagent: ' .. isCraftingReagent)
 end
 
 function RaidManager:ArchiveItems()
