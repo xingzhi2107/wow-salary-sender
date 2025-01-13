@@ -267,9 +267,9 @@ end
 
 local function containerForEach(bagIdStart, bagIdEnd, callback)
     for bagId = bagIdStart, bagIdEnd do
-        local slotsCount = GetContainerNumSlots(bagId)
+        local slotsCount = C_Container.GetContainerNumSlots(bagId)
         for slot = 1, slotsCount do
-            local itemId = GetContainerItemID(bagId, slot)
+            local itemId = C_Container.GetContainerItemID(bagId, slot)
             callback(bagId, slot, itemId)
         end
     end
@@ -360,7 +360,7 @@ function RaidManager:ArchiveItems()
         local chunks = Utils:arrChunkBySize(locations, 12)
         local chunk = chunks[1] -- 下一步再实现循环
         Utils:arrForEach(chunk, function(location)
-            UseContainerItem(location.bagId, location.slot)
+            C_Container.UseContainerItem(location.bagId, location.slot)
         end)
         -- Utils:arrForEach(chunks, function(chunk)
         --    Utils:arrForEach(chunk, function(location)
@@ -376,7 +376,9 @@ function RaidManager:PickItemsFromBank()
     local type2Locations = buildChar2Locations(5, 11)
     for char, locations in pairs(type2Locations) do
         Utils:arrForEach(locations, function(location)
-            UseContainerItem(location.bagId, location.slot)
+            C_Container.UseContainerItem(location.bagId, location.slot)
         end)
     end
 end
+
+
