@@ -681,7 +681,7 @@ local type2Items = {
         }
     },
     ['配方'] = {
-        character = '菲配方-发拉克斯',
+        character = '菲配方-法拉克斯',
         ids = {
         }
     }

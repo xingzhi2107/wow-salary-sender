@@ -352,7 +352,6 @@ function RaidManager:ShowItem()
 end
 
 function RaidManager:ArchiveItems()
-    print('builod')
     local type2Locations = buildChar2Locations(0, 4)
 
     for char, locations in pairs(type2Locations) do
